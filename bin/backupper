@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << './lib'
+
+require 'backupper'
+
+if ARGV.size != 1
+  puts "usage: #{$0} path/to/config.yml"
+  exit 1
+end
+
+b = Backupper.new(ARGV.first)
+b.backup!
