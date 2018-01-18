@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << './lib'
-
 require 'backupper'
 
 if ARGV.size != 1

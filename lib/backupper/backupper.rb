@@ -24,7 +24,7 @@ class Backupper
   def backup!
     @conf.each do |k, options|
       o = @default.merge(options)
-      puts "🗄 run backup of #{k}..."
+      puts "⬇️  backing up #{k}..."
       outdir = check_dir(o['dump'].to_s)
       unless outdir
         err = 'Invalid directory where to save database dump'

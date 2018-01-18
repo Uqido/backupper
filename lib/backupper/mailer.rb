@@ -38,9 +38,9 @@ class Mailer
         s << "️✅ #{k}\n"
         s << '=' * 80 << "\n"
         s << "Backup SUCCESS!\n"
-        s << "  dump path: #{data[:path]}\n"
         s << "  dump size: #{data[:size]} MB\n"
         s << "  time: #{data[:time]} seconds\n"
+        s << "  dump saved in: #{data[:path]}\n"
         if data[:extra_copy]
           s << "  extra copy in: #{data[:extra_copy]}\n"
         else
