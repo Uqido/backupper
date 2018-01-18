@@ -47,7 +47,9 @@ db2:
   db_password: db_Pa$$w0rD
 ```
 
-After backups a report email is sent to you using gmail smtp service.
+After the backup a report email is sent to you using gmail smtp service (remember to permit less secure app [here](https://myaccount.google.com/lesssecureapps)).
+
+⚠️ __WARNING__: the backupper configuration file contains many important passwords, so be careful to lock it and protect it with care!
 
 ## Contributing
 
