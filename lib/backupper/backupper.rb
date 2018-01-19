@@ -94,15 +94,14 @@ class Backupper
     if self.respond_to?("#{adapter}_dump_command")
       t = Time.now
       path = nil
-      dump_name = nil
       filename = "#{key}__#{database}.sql.bz2"
       tempfile = File.join('/tmp', filename)
       dumpname = "#{Time.now.strftime('%Y-%M-%d_%H-%M-%S')}__#{filename}"
       path = File.join(outdir, dumpname)
       backupper = self
-      on(host) do |host|
-        host.password = password
-        execute backupper.send("#{adapter}_dump_command", database: database, username: db_username, password: db_password, outfile: tempfile)
+      on(host) do |client|
+        client.password = password
+        execute 'set -o pipefail; ' + backupper.send("#{adapter}_dump_command", database: database, username: db_username, password: db_password, outfile: tempfile)
         download! tempfile, path
         execute :rm, tempfile
       end
