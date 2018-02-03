@@ -57,6 +57,7 @@ class Backupper
           database: o['database'],
           db_username: o['db_username'],
           db_password: o['db_password'],
+          dump_options: o['dump_options'],
           outdir: outdir,
           extra_copy: o['extra_copy']
         )
@@ -74,23 +75,25 @@ class Backupper
     end
   end
 
-  def mysql_dump_command(database:, username: 'root', password: nil, outfile:)
+  def mysql_dump_command(database:, username: 'root', password: nil, dump_options: nil, outfile:)
     params = []
     params << "--databases '#{database}'"
     params << "-u#{username}"
     params << "-p#{password}" if password
+    params << dump_options if dump_options
     return "mysqldump #{params.join(' ')} | bzip2 > '#{outfile}'"
   end
 
-  def postgresql_dump_command(database:, username: 'root', password: nil, outfile:)
+  def postgresql_dump_command(database:, username: 'root', password: nil, dump_options: nil, outfile:)
     params = []
     params << "-U #{username}"
     params << "-W #{password}" if password
     params << "'#{database}'"
+    params << dump_options if dump_options
     return "pg_dump #{params.join(' ')} | bzip2 > '#{outfile}'"
   end
 
-  def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, outdir:, extra_copy: nil)
+  def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
     if self.respond_to?("#{adapter}_dump_command")
       t = Time.now
       path = nil
@@ -101,7 +104,7 @@ class Backupper
       backupper = self
       on(host) do |client|
         client.password = password
-        execute 'set -o pipefail; ' + backupper.send("#{adapter}_dump_command", database: database, username: db_username, password: db_password, outfile: tempfile)
+        execute 'set -o pipefail; ' + backupper.send("#{adapter}_dump_command", database: database, username: db_username, password: db_password, dump_options: dump_options, outfile: tempfile)
         download! tempfile, path
         execute :rm, tempfile
       end
