@@ -21,17 +21,18 @@ mailer:
   password: Pa$$w0rD      # Gmail account password
 
 db1:
-  disabled: false                            # true to disable this backup
-  dump: '/home/backup/db1'                   # path where to save the dump of the database
-  extra_copy: '/mnt/backup-disk/backups/db1' # path where to save a extra copy of the dump
-  username: user                             # server ssh username
-  host: '1.2.3.4'                            # server ssh ip
-  port: 22                                   # server ssh port
-  password: Pa$$w0rD                         # server ssh password
-  adapter: mysql                             # database to backup (supported are mysql or postgresql)
-  database: db_name                          # database name
-  db_username: db_user                       # database username
-  db_password: db_Pa$$w0rD                   # database password
+  disabled: false                              # true to disable this backup
+  dump: '/home/backup/db1'                     # path where to save the dump of the database
+  extra_copy: '/mnt/backup-disk/backups/db1'   # path where to save a extra copy of the dump
+  username: user                               # server ssh username
+  host: '1.2.3.4'                              # server ssh ip
+  port: 22                                     # server ssh port
+  password: Pa$$w0rD                           # server ssh password
+  adapter: mysql                               # database to backup (supported are mysql or postgresql)
+  database: db_name                            # database name
+  db_username: db_user                         # database username
+  db_password: db_Pa$$w0rD                     # database password
+  dump_options: '--single-transaction --quick' # dump command extra options
 
 db2:
   disabled: false
