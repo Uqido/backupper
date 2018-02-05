@@ -87,10 +87,9 @@ class Backupper
   def postgresql_dump_command(database:, username: 'root', password: nil, dump_options: nil, outfile:)
     params = []
     params << "-U #{username}"
-    params << "-W #{password}" if password
     params << "'#{database}'"
     params << dump_options if dump_options
-    return "pg_dump #{params.join(' ')} | bzip2 > '#{outfile}'"
+    return "PGPASSWORD=#{password} pg_dump #{params.join(' ')} | bzip2 > '#{outfile}'"
   end
 
   def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
