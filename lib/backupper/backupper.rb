@@ -98,7 +98,7 @@ class Backupper
       path = nil
       filename = "#{key}__#{database}.sql.bz2"
       tempfile = File.join('/tmp', filename)
-      dumpname = "#{Time.now.strftime('%Y-%M-%d_%H-%M-%S')}__#{filename}"
+      dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
       path = File.join(outdir, dumpname)
       backupper = self
       on(host) do |client|
