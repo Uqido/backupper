@@ -36,7 +36,7 @@ db1:
 
 db2:
   disabled: false
-  dump: '/home/backup/db2
+  dump: '/home/backup/db2'
   extra_copy: '/mnt/backup-disk/backups/db2'
   username: user
   host: '1.2.3.4'
@@ -62,9 +62,9 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## About Uqido
 
-[![uqido](https://www.uqido.com/assets/uqido/logo_Uqido@2x-07d759d29607a31dcc13d18b5c67585377eee4fceff1ea733340113ca4f574c0.png)](http://uqido.com)
+[![uqido](https://i.imgur.com/FAo2W7w.png)](http://uqido.com)
 
 Backupper is maintained and funded by [Uqido](https://uqido.com).
 The names and logos for Uqido are trademarks of Uqido s.r.l.
 
-The [Uqido team](https://www.uqido.com/#team).
+The [Uqido team](https://www.uqido.com/chi-siamo/).
