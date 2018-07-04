@@ -1,6 +1,6 @@
 # Backupper
 
-Backupper is a useful tool to backup all your databases spreaded in the world!
+Backupper is a tool to backup all your databases spread in the world!
 
 ## Installation
 

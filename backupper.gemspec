@@ -7,10 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = 'backupper'
   spec.version       = Backupper::VERSION
   spec.authors       = ['pioz']
-  spec.email         = ['epilotto@gmx.com']
+  spec.email         = ['enrico.pilotto@uqido.com']
 
   spec.summary       = %q{Tool to backup databases}
-  spec.description   = %q{Tool to backup databases}
+  spec.description   = %q{Backupper is a tool to backup all your databases spread in the world}
   spec.homepage      = 'https://github.com/uqido/backupper'
   spec.license       = 'MIT'
 
