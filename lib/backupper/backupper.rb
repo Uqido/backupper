@@ -2,6 +2,8 @@ require 'yaml'
 require 'fileutils'
 require 'sshkit'
 require 'sshkit/dsl'
+require 'backupper/dump_command'
+require 'backupper/mailer'
 include SSHKit::DSL
 
 class Backupper
@@ -23,49 +25,79 @@ class Backupper
 
   def backup!
     @conf.each do |k, options|
-      o = @default.merge(options)
       puts "⬇️  backing up #{k}..."
-      outdir = check_dir(o['dump'].to_s)
-      unless outdir
-        err = 'Invalid directory where to save database dump'
-        error(k, err)
-        puts err
-        next
-      end
-      host = o['host']
-      host = "#{o['username']}@#{host}" if o['username']
-      host = "#{host}:#{o['port']}" if o['port']
-      adapter = o['adapter'] || 'mysql'
-      unless self.respond_to?("#{adapter}_dump_command")
-        err = "Cannot handle adapter '#{adapter}'"
-        error(k, err)
-        puts err
-        next
-      end
-      unless o['database']
-        err = 'Please specify database name!'
+      o, err = setup_options(options)
+      if err
         error(k, err)
         puts err
         next
       end
       begin
         download_dump(
-          key: k,
-          adapter: adapter,
-          host: host,
-          password: o['password'],
-          database: o['database'],
-          db_username: o['db_username'],
-          db_password: o['db_password'],
+          key:          k,
+          adapter:      o['adapter'],
+          host:         o['host'],
+          password:     o['password'],
+          database:     o['database'],
+          db_username:  o['db_username'],
+          db_password:  o['db_password'],
           dump_options: o['dump_options'],
-          outdir: outdir,
-          extra_copy: o['extra_copy']
+          outdir:       o['outdir'],
+          extra_copy:   o['extra_copy']
         )
       rescue SSHKit::Runner::ExecuteError => e
         error(k, e.to_s)
         puts e
       end
     end
+    send_report_email!
+  end
+
+  def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
+    t = Time.now
+    path = nil
+    filename = "#{key}__#{database}.sql.bz2"
+    tempfile = File.join('/tmp', filename)
+    dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
+    path = File.join(outdir, dumpname)
+    on(host) do |client|
+      client.password = password
+      execute 'set -o pipefail; ' + DumpCommand.send(adapter, database: database, username: db_username, password: db_password, dump_options: dump_options, outfile: tempfile)
+      download! tempfile, path
+      execute :rm, tempfile
+    end
+    extra_copy = check_dir(extra_copy)
+    FileUtils.cp(path, extra_copy) if extra_copy
+    @report[key] = {
+      path: File.absolute_path(path),
+      size: (File.size(path).to_f / 2**20).round(2),
+      time: (Time.now - t).round(2)
+    }
+    @report[key].merge!({extra_copy: File.absolute_path(File.join(extra_copy, dumpname))}) if extra_copy
+  end
+
+  private
+
+  def setup_options(options)
+    o = @default.merge(options)
+    o['outdir'] = check_dir(o['dump'].to_s)
+    unless o['outdir']
+      return nil, 'Invalid directory where to save database dump'
+    end
+    o['host'] ||= 'localhost'
+    o['host'] = "#{o['username']}@#{o['host']}" if o['username']
+    o['host'] = "#{o['host']}:#{o['port']}" if o['port']
+    o['adapter'] ||= 'mysql'
+    unless DumpCommand.respond_to?(o['adapter'])
+      return nil, "Cannot handle adapter '#{o['adapter']}'"
+    end
+    unless o['database']
+      return nil, 'Please specify database name!'
+    end
+    return o, nil
+  end
+
+  def send_report_email!
     if @report.any? && @mailer['from'] && @mailer['to'] && @mailer['password']
       begin
         Mailer.send(from: @mailer['from'], to: @mailer['to'], password: @mailer['password'], report: @report)
@@ -74,51 +106,6 @@ class Backupper
       end
     end
   end
-
-  def mysql_dump_command(database:, username: 'root', password: nil, dump_options: nil, outfile:)
-    params = []
-    params << "--databases '#{database}'"
-    params << "-u#{username}"
-    params << "-p#{password}" if password
-    params << dump_options if dump_options
-    return "mysqldump #{params.join(' ')} | bzip2 > '#{outfile}'"
-  end
-
-  def postgresql_dump_command(database:, username: 'root', password: nil, dump_options: nil, outfile:)
-    params = []
-    params << "-U #{username}"
-    params << "'#{database}'"
-    params << dump_options if dump_options
-    return "PGPASSWORD=#{password} pg_dump #{params.join(' ')} | bzip2 > '#{outfile}'"
-  end
-
-  def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
-    if self.respond_to?("#{adapter}_dump_command")
-      t = Time.now
-      path = nil
-      filename = "#{key}__#{database}.sql.bz2"
-      tempfile = File.join('/tmp', filename)
-      dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
-      path = File.join(outdir, dumpname)
-      backupper = self
-      on(host) do |client|
-        client.password = password
-        execute 'set -o pipefail; ' + backupper.send("#{adapter}_dump_command", database: database, username: db_username, password: db_password, dump_options: dump_options, outfile: tempfile)
-        download! tempfile, path
-        execute :rm, tempfile
-      end
-      extra_copy = check_dir(extra_copy)
-      FileUtils.cp(path, extra_copy) if extra_copy
-      @report[key] = {
-        path: File.absolute_path(path),
-        size: (File.size(path).to_f / 2**20).round(2),
-        time: (Time.now - t).round(2)
-      }
-      @report[key].merge!({extra_copy: File.absolute_path(File.join(extra_copy, dumpname))}) if extra_copy
-    end
-  end
-
-  private
 
   def error(key, error)
     @report[key] = {error: error}
