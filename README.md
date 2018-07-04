@@ -1,6 +1,6 @@
 # Backupper
 
-Backupper is a tool to backup all your databases spread in the world!
+Backupper is a tool to backup all your databases spread all over the world!
 
 ## Installation
 
@@ -12,7 +12,7 @@ Backupper is a tool to backup all your databases spread in the world!
 
 ## Configuration file
 
-A common config file for backupper looks like this:
+A common [YAML](http://yaml.org/) config file for backupper looks like this:
 
 ```yaml
 mailer:
@@ -67,4 +67,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 Backupper is maintained and funded by [Uqido](https://uqido.com).
 The names and logos for Uqido are trademarks of Uqido s.r.l.
 
-The [Uqido team](https://www.uqido.com/chi-siamo/).
+The [Uqido team](https://www.uqido.com/en/about-us/).
