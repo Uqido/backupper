@@ -54,7 +54,7 @@ class Backupper
   end
 
   def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
-    t = Time.now
+    t = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     path = nil
     filename = "#{key}__#{database}.sql.bz2"
     tempfile = File.join('/tmp', filename)
@@ -71,7 +71,7 @@ class Backupper
     @report[key] = {
       path: File.absolute_path(path),
       size: (File.size(path).to_f / 2**20).round(2),
-      time: (Time.now - t).round(2)
+      time: (Process.clock_gettime(Process::CLOCK_MONOTONIC) - t).round(2)
     }
     @report[key].merge!({extra_copy: File.absolute_path(File.join(extra_copy, dumpname))}) if extra_copy
   end
