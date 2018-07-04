@@ -36,7 +36,7 @@ class Backupper
         download_dump(
           key:          k,
           adapter:      o['adapter'],
-          host:         o['host'],
+          url:          o['url'],
           password:     o['password'],
           database:     o['database'],
           db_username:  o['db_username'],
@@ -53,14 +53,14 @@ class Backupper
     send_report_email!
   end
 
-  def download_dump(key:, adapter: 'mysql', host:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
+  def download_dump(key:, adapter: 'mysql', url:, password: nil, database:, db_username: 'root', db_password: nil, dump_options: nil, outdir:, extra_copy: nil)
     t = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     path = nil
     filename = "#{key}__#{database}.sql.bz2"
     tempfile = File.join('/tmp', filename)
     dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
     path = File.join(outdir, dumpname)
-    on(host) do |client|
+    on(url) do |client|
       client.password = password
       execute 'set -o pipefail; ' + DumpCommand.send(adapter, database: database, username: db_username, password: db_password, dump_options: dump_options, outfile: tempfile)
       download! tempfile, path
@@ -84,15 +84,18 @@ class Backupper
     unless o['outdir']
       return nil, 'Invalid directory where to save database dump'
     end
-    o['host'] ||= 'localhost'
-    o['host'] = "#{o['username']}@#{o['host']}" if o['username']
-    o['host'] = "#{o['host']}:#{o['port']}" if o['port']
+    unless o['database']
+      return nil, 'Please specify the database name!'
+    end
+    unless o['host']
+      return nil, 'Please specify the host!'
+    end
+    o['url'] = o['host']
+    o['url'] = "#{o['username']}@#{o['url']}" if o['username']
+    o['url'] = "#{o['url']}:#{o['port']}" if o['port']
     o['adapter'] ||= 'mysql'
     unless DumpCommand.respond_to?(o['adapter'])
       return nil, "Cannot handle adapter '#{o['adapter']}'"
-    end
-    unless o['database']
-      return nil, 'Please specify database name!'
     end
     return o, nil
   end
