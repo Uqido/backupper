@@ -52,6 +52,9 @@ After done all backups a report email is sent to you using gmail smtp service (r
 
 ⚠️ __WARNING__: the backupper configuration file contains many important passwords, so be careful to lock it and protect it with care!
 
+## Resources
+* [Blog post about Backupper](https://tech.uqido.com/2018/07/16/backupper-tool-backup-database/) (italian only).
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/uqido/backupper.
