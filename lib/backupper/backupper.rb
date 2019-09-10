@@ -7,11 +7,10 @@ require 'backupper/mailer'
 include SSHKit::DSL
 
 class Backupper
-
   SSHKit::Backend::Netssh.configure do |ssh|
     ssh.connection_timeout = 30
     ssh.ssh_options = {
-      auth_methods: %w(publickey password)
+      auth_methods: %w[publickey password]
     }
   end
 
@@ -19,7 +18,7 @@ class Backupper
     conf = YAML.load_file(conf_file_path)
     @default = conf['default'] || {}
     @mailer = conf['mailer'] || {}
-    @conf = conf.select{|k, v| !%w(default mailer).include?(k) && (v['disabled'].nil? || v['disabled'] == false)}
+    @conf = conf.select { |k, v| !%w[default mailer].include?(k) && (v['disabled'].nil? || v['disabled'] == false) }
     @report = {}
   end
 
@@ -58,7 +57,7 @@ class Backupper
     path = nil
     filename = "#{key}__#{database}.sql.bz2"
     tempfile = File.join('/tmp', filename)
-    dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
+    dumpname = "#{Time.zone.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
     path = File.join(outdir, dumpname)
     on(url) do |client|
       client.password = password
@@ -73,58 +72,61 @@ class Backupper
       size: (File.size(path).to_f / 2**20).round(2),
       time: (Process.clock_gettime(Process::CLOCK_MONOTONIC) - t).round(2)
     }
-    @report[key].merge!({extra_copy: File.absolute_path(File.join(extra_copy, dumpname))}) if extra_copy
+    @report[key].merge!({ extra_copy: File.absolute_path(File.join(extra_copy, dumpname)) }) if extra_copy
   end
 
   private
 
-  def setup_options(options)
-    o = @default.merge(options)
-    o['outdir'] = check_dir(o['dump'].to_s)
-    unless o['outdir']
-      return nil, 'Invalid directory where to save database dump'
-    end
-    unless o['database']
-      return nil, 'Please specify the database name!'
-    end
-    unless o['host']
-      return nil, 'Please specify the host!'
-    end
-    o['url'] = o['host']
-    o['url'] = "#{o['username']}@#{o['url']}" if o['username']
-    o['url'] = "#{o['url']}:#{o['port']}" if o['port']
-    o['adapter'] ||= 'mysql'
-    unless DumpCommand.respond_to?(o['adapter'])
-      return nil, "Cannot handle adapter '#{o['adapter']}'"
-    end
-    return o, nil
-  end
+    def setup_options(options)
+      o = @default.merge(options)
+      o['outdir'] = check_dir(o['dump'].to_s)
+      unless o['outdir']
+        return nil, 'Invalid directory where to save database dump'
+      end
+      unless o['database']
+        return nil, 'Please specify the database name!'
+      end
+      unless o['host']
+        return nil, 'Please specify the host!'
+      end
 
-  def send_report_email!
-    if @report.any? && @mailer['from'] && @mailer['to'] && @mailer['password']
-      begin
-        Mailer.send(from: @mailer['from'], to: @mailer['to'], password: @mailer['password'], report: @report)
-      rescue Net::SMTPAuthenticationError => e
-        puts e
+      o['url'] = o['host']
+      o['url'] = "#{o['username']}@#{o['url']}" if o['username']
+      o['url'] = "#{o['url']}:#{o['port']}" if o['port']
+      o['adapter'] ||= 'mysql'
+      unless DumpCommand.respond_to?(o['adapter'])
+        return nil, "Cannot handle adapter '#{o['adapter']}'"
+      end
+
+      return o, nil
+    end
+
+    def send_report_email!
+      if @report.any? && @mailer['from'] && @mailer['to'] && @mailer['password']
+        begin
+          Mailer.send(from: @mailer['from'], to: @mailer['to'], password: @mailer['password'], report: @report)
+        rescue Net::SMTPAuthenticationError => e
+          puts e
+        end
       end
     end
-  end
 
-  def error(key, error)
-    @report[key] = {error: error}
-  end
-
-  def check_dir(dirpath)
-    return nil if dirpath.nil?
-    unless File.exists?(dirpath)
-      begin
-        FileUtils::mkdir_p(dirpath)
-      rescue => e
-        return nil
-      end
+    def error(key, error)
+      @report[key] = { error: error }
     end
-    return File.dirname(dirpath) unless File.directory?(dirpath)
-    return dirpath
-  end
 
+    def check_dir(dirpath)
+      return nil if dirpath.nil?
+
+      unless File.exist?(dirpath)
+        begin
+          FileUtils.mkdir_p(dirpath)
+        rescue StandardError => _e
+          return nil
+        end
+      end
+      return File.dirname(dirpath) unless File.directory?(dirpath)
+
+      return dirpath
+    end
 end

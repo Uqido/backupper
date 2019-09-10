@@ -3,7 +3,7 @@
 require 'backupper'
 
 if ARGV.size != 1
-  puts "usage: #{$0} path/to/config.yml"
+  puts "usage: #{$PROGRAM_NAME} path/to/config.yml"
   exit 1
 end
 

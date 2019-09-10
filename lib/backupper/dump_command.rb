@@ -1,5 +1,4 @@
 module DumpCommand
-
   def self.mysql(database:, username: 'root', password: nil, dump_options: nil, outfile:)
     params = []
     params << "--databases '#{database}'"
@@ -16,5 +15,4 @@ module DumpCommand
     params << dump_options if dump_options
     return "PGPASSWORD=#{password} pg_dump #{params.join(' ')} | bzip2 > '#{outfile}'"
   end
-
 end
