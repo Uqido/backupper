@@ -1,2 +1,2 @@
-require 'backupper/backupper'
-require 'backupper/version'
+require_relative 'backupper/backupper'
+require_relative 'backupper/version'

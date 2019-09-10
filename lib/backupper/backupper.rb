@@ -1,12 +1,14 @@
-require 'yaml'
 require 'fileutils'
 require 'sshkit'
 require 'sshkit/dsl'
-require 'backupper/dump_command'
-require 'backupper/mailer'
-include SSHKit::DSL
+require 'yaml'
+
+require_relative 'dump_command'
+require_relative 'mailer'
 
 class Backupper
+  include SSHKit::DSL
+
   SSHKit::Backend::Netssh.configure do |ssh|
     ssh.connection_timeout = 30
     ssh.ssh_options = {
@@ -20,15 +22,18 @@ class Backupper
     @mailer = conf['mailer'] || {}
     @conf = conf.select { |k, v| !%w[default mailer].include?(k) && (v['disabled'].nil? || v['disabled'] == false) }
     @report = {}
+    @logger = SSHKit::Formatter::Pretty.new($stdout)
   end
 
-  def backup!
-    @conf.each do |k, options|
-      puts "⬇️  backing up #{k}..."
+  def backup!(only_these_keys = nil)
+    filtered_conf = @conf
+    filtered_conf = @conf.slice(*only_these_keys) if only_these_keys
+    filtered_conf.each do |k, options|
+      @logger.info "[#{Time.now}] ⬇️  backing up #{k}..."
       o, err = setup_options(options)
       if err
         error(k, err)
-        puts err
+        @logger.error err
         next
       end
       begin
@@ -46,7 +51,7 @@ class Backupper
         )
       rescue SSHKit::Runner::ExecuteError => e
         error(k, e.to_s)
-        puts e
+        @logger.error e
       end
     end
     send_report_email!
@@ -57,7 +62,7 @@ class Backupper
     path = nil
     filename = "#{key}__#{database}.sql.bz2"
     tempfile = File.join('/tmp', filename)
-    dumpname = "#{Time.zone.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
+    dumpname = "#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}__#{filename}"
     path = File.join(outdir, dumpname)
     on(url) do |client|
       client.password = password
@@ -80,15 +85,9 @@ class Backupper
     def setup_options(options)
       o = @default.merge(options)
       o['outdir'] = check_dir(o['dump'].to_s)
-      unless o['outdir']
-        return nil, 'Invalid directory where to save database dump'
-      end
-      unless o['database']
-        return nil, 'Please specify the database name!'
-      end
-      unless o['host']
-        return nil, 'Please specify the host!'
-      end
+      return nil, 'Invalid directory where to save database dump' unless o['outdir']
+      return nil, 'Please specify the database name!' unless o['database']
+      return nil, 'Please specify the host!' unless o['host']
 
       o['url'] = o['host']
       o['url'] = "#{o['username']}@#{o['url']}" if o['username']
@@ -106,7 +105,7 @@ class Backupper
         begin
           Mailer.send(from: @mailer['from'], to: @mailer['to'], password: @mailer['password'], report: @report)
         rescue Net::SMTPAuthenticationError => e
-          puts e
+          @logger.error e
         end
       end
     end

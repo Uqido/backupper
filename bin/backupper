@@ -1,11 +1,34 @@
 #!/usr/bin/env ruby
 
-require 'backupper'
+require 'optparse'
 
-if ARGV.size != 1
-  puts "usage: #{$PROGRAM_NAME} path/to/config.yml"
+require_relative '../lib/backupper'
+
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "usage: #{$PROGRAM_NAME} path/to/config.yml [options]"
+
+  opts.on('-v', 'Print version') do |v|
+    options[:version] = v
+  end
+
+  opts.on('-o', '--only=conf-key1,conf-key2', Array, 'Backup only specific database configurations') do |keys|
+    options[:only] = keys
+  end
+end
+
+begin
+  parser.parse!
+  raise OptionParser::InvalidOption if ARGV.size != 1
+rescue OptionParser::InvalidOption
+  puts parser.banner
   exit 1
 end
 
+if options[:version]
+  puts Backupper::VERSION
+  exit 0
+end
+
 b = Backupper.new(ARGV.first)
-b.backup!
+b.backup!(options[:only])

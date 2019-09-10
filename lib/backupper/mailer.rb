@@ -16,8 +16,8 @@ class Mailer
     Mail.deliver do
       to to
       from from
-      subject Mailer.subject(report)
-      body Mailer.body(report)
+      subject self.subject(report)
+      body self.body(report)
     end
   end
 
@@ -48,7 +48,7 @@ class Mailer
           end
           b << s
         end
-        return "Report for backups (#{Time.zone.now})\n\n#{b.join("\n\n")}"
+        return "Report for backups (#{Time.now})\n\n#{b.join("\n\n")}"
       end
 
       def subject(report)

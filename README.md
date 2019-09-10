@@ -52,6 +52,9 @@ After done all backups a report email is sent to you using gmail smtp service (r
 
 ⚠️ __WARNING__: the backupper configuration file contains many important passwords, so be careful to lock it and protect it with care!
 
+To backup only specific databases you can pass the option `-o db1,db3`. In this way only databases under the key `db1` and `db3` will be backupped,
+ignoring the others configuration keys.
+
 ## Resources
 * [Blog post about Backupper](https://tech.uqido.com/2018/07/16/backupper-tool-backup-database/) (italian only).
 
