@@ -8,7 +8,7 @@ Backupper is a tool to backup all your databases spread all over the world!
 
 ## Usage
 
-    $ backupper path/to/config.yml
+    $ backupper path/to/config.yml [options]
 
 ## Configuration file
 
