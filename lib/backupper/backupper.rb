@@ -22,6 +22,7 @@ class Backupper
     @mailer = conf['mailer'] || {}
     @conf = conf.select { |k, v| !%w[default mailer].include?(k) && (v['disabled'].nil? || v['disabled'] == false) }
     @report = {}
+    @on_error = false
     @logger = SSHKit::Formatter::Pretty.new($stdout)
   end
 
@@ -38,16 +39,16 @@ class Backupper
       end
       begin
         download_dump(
-          key:          k,
-          adapter:      o['adapter'],
-          url:          o['url'],
-          password:     o['password'],
-          database:     o['database'],
-          db_username:  o['db_username'],
-          db_password:  o['db_password'],
+          key: k,
+          adapter: o['adapter'],
+          url: o['url'],
+          password: o['password'],
+          database: o['database'],
+          db_username: o['db_username'],
+          db_password: o['db_password'],
           dump_options: o['dump_options'],
-          outdir:       o['outdir'],
-          extra_copy:   o['extra_copy']
+          outdir: o['outdir'],
+          extra_copy: o['extra_copy']
         )
       rescue SSHKit::Runner::ExecuteError => e
         error(k, e.to_s)
@@ -101,7 +102,8 @@ class Backupper
     end
 
     def send_report_email!
-      if @report.any? && @mailer['from'] && @mailer['to'] && @mailer['password']
+      # send mail just in case of errors
+      if @report.any? && @on_error && @mailer['from'] && @mailer['to'] && @mailer['password']
         begin
           Mailer.send(from: @mailer['from'], to: @mailer['to'], password: @mailer['password'], report: @report)
         rescue Net::SMTPAuthenticationError => e
@@ -112,6 +114,7 @@ class Backupper
 
     def error(key, error)
       @report[key] = { error: error }
+      @on_error = true
     end
 
     def check_dir(dirpath)
